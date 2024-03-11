@@ -8,6 +8,7 @@ require('./DB/connection');
 
 // Import Files
 const Users = require('./Models/users')
+const Conversations = require('./Models/Conversations')
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -48,6 +49,7 @@ app.post(('/api/register'), async (req, res, next) => {
     catch (err) { }
 })
 
+// Login to application
 app.post('/api/login', async(req, res, next) => {
     try {
         const {email, password } = req.body;
@@ -84,6 +86,34 @@ app.post('/api/login', async(req, res, next) => {
         }
     }
     catch (e) { console.log(e)};
+})
+
+// Make conversation between two users
+app.post("/api/conversation", async(req, res)=>{
+    try {
+        const {senderId, receiverId} = req.body;
+        const newConversation = new Conversations({members : [senderId, receiverId]});
+        await newConversation.save();
+        res.status(200).send("Conversation created successfully")
+    } catch (error) {
+        console.log(error);
+    }
+})
+
+// Get conversation of user
+app.get("/api/conversation/:userId", async(req, res)=>{
+    try {
+        const userId =  req.params.userId;
+        const conversations = await Conversations.find({members:{$in:[userId]}});
+        const conversationUserData = Promise.all(conversations.map(async (conconversation)=>{
+            const receiverId = conconversation.members.find((member)=> member !== userId);
+            const user =  await Users.findById(receiverId);
+            return {user:{email:user.email, fullName: user.fullName}, conversationId:conconversation._id};
+        }))
+        res.status(200).json(await conversationUserData);
+    } catch (error) {
+        console.log("Error", error);
+    }
 })
 
 app.listen((port), () => {
