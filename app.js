@@ -1,7 +1,9 @@
 const express = require('express');
 const bcryptjs = require('bcryptjs');
 const JWT = require('jsonwebtoken');
+const cors = require('cors');
 const app = express();
+
 
 // connection to database
 require('./DB/connection');
@@ -13,8 +15,9 @@ const Message = require('./Models/Messages');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cors());
 
-const port = process.env.port || 5000;
+const port = process.env.port || 8000;
 
 
 app.get('/', async (req, res) => {
@@ -79,9 +82,11 @@ app.post('/api/login', async (req, res, next) => {
                             $set: { token }
                         });
                         user.save();
-                        next();
+                        return res.status(200).json({ user: { email: user.email, fullName: user.fullName, id: user._id }, token: token });
+                       
                     })
-                    res.status(200).json({ user: { email: user.email, fullName: user.fullName }, token: user.token });
+                    
+                    
                 }
             }
         }
@@ -102,7 +107,7 @@ app.post("/api/conversation", async (req, res) => {
 })
 
 // Get conversation of user
-app.get("/api/conversation/:userId", async (req, res) => {
+app.get("/api/conversations/:userId", async (req, res) => {
     try {
         const userId = req.params.userId;
         const conversations = await Conversations.find({ members: { $in: [userId] } });
