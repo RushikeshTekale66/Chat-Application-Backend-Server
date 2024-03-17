@@ -29,7 +29,7 @@ const port = process.env.port || 8000;
 // socket.io integreated
 let users = [];
 io.on('connection', socket => {
-    console.log("Socket id : ", socket.id);
+    // console.log("Socket id : ", socket.id);
 
     // get data from frontend
     socket.on('addUser', userId => {
@@ -47,9 +47,9 @@ io.on('connection', socket => {
         io.emit('getUsers', users);
     });
 
-    socket.on('sendMessage', async({ senderId, receiverId, message, conversationId }) => {
+    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
         const receiver = users.find(user => user.userId === receiverId);
-        const sender = users.find(user => user.userId ===senderId);
+        const sender = users.find(user => user.userId === senderId);
         const user = await Users.findById(senderId);
         if (receiver) {
             io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
@@ -57,7 +57,16 @@ io.on('connection', socket => {
                 message,
                 conversationId,
                 receiverId,
-                user:{id: user._id, fullName: user.fullName, email: user.email}
+                user: { id: user._id, fullName: user.fullName, email: user.email }
+            })
+        }
+        else {
+            io.to(sender.socketId).emit('getMessage', {
+                senderId,
+                message,
+                conversationId,
+                receiverId,
+                user: { id: user._id, fullName: user.fullName, email: user.email }
             })
         }
     })
